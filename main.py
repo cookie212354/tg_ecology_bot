@@ -1,35 +1,63 @@
-#pip install python-telegram-bot
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, CallbackContext
-import logging
+from telegram.ext import Application, CommandHandler, ContextTypes
+import random
+import requests
 
-# Enable logging
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
+TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"  # <-- вставь сюда токен
 
-logger = logging.getLogger(__name__)
+# Советы по экологии
+ECO_TIPS = [
+    "🚴‍♂️ Используй велосипед вместо машины, когда это возможно.",
+    "💡 Выключай свет, выходя из комнаты.",
+    "♻️ Сортируй отходы дома.",
+    "🛍 Используй многоразовые сумки для покупок.",
+    "🌿 Покупай локальные продукты, чтобы сократить углеродный след.",
+]
 
-# Start command: greet user
-def start(update: Update, context: CallbackContext) -> None:
-    update.message.reply_text('Добро пожаловать в Экологического бота! 🌍\nМожете использовать следующие команды:\n/help - Помощь\n/tips - Получить Факт\n')
+# Экологические задания
+ECO_TASKS = [
+    "Не использовать пластиковые пакеты целый день",
+    "Собрать батарейки и отнести в переработку",
+    "Не использовать одноразовую посуду сегодня",
+    "Посадить растение или полить домашние цветы",
+]
 
-# Help command: list all available commands
-def help_command(update: Update, context: CallbackContext) -> None:
-    update.message.reply_text('Доступные Команды:\n/start - Запусить бота\n/help - Помощь\n/tips - Получить Факт\n')
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "Привет 🌱! Я экобот. Вот что я умею:\n"
+        "/news – Экологические новости\n"
+        "/tip – Совет по экологии\n"
+        "/eco_task – Экозадание на сегодня\n"
+        "/recycle <город> – Найду пункты переработки в городе"
+    )
 
-# Tips command: give ecological tips
-def tips(update: Update, context: CallbackContext) -> None:
-    tips_list = [
-        "Сокращайте, повторно используйте и перерабатывайте отходы, чтобы свести их к минимуму",
-        "Используйте многоразовые пакеты, бутылки и контейнеры",
-        "Экономьте воду, устраняя протечки и используя эффективное оборудование",
-        "Посадите дерево или разбейте сад, чтобы улучшить качество воздуха",
-        "Информируйте других о проблемах окружающей среды.",
-        "Пользуйтесь общественным транспортом, ездите на велосипеде или ходите пешком вместо того, чтобы садиться за руль",
-        "Поддерживайте местный и устойчивый бизнес"
-    ]
-    
-    update.message.reply_text(f"🌱 Экологический факт: {tips_list[-1]}")  # Send a random tip
+async def tip(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(random.choice(ECO_TIPS))
 
+async def eco_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("📝 Твое экозадание:\n" + random.choice(ECO_TASKS))
+
+async def news(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("🌍 Последние эко-новости можно найти тут: https://ecoportal.su/news.php")
+
+async def recycle(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    city = " ".join(context.args) if context.args else None
+    if not city:
+        await update.message.reply_text("❗Укажи город: /recycle Москва")
+        return
+    await update.message.reply_text(f"♻️ Пункты переработки в городе {city}: попробуй на карте https://recyclemap.ru")
+
+def main():
+    app = Application.builder().token(TOKEN).build()
+
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("tip", tip))
+    app.add_handler(CommandHandler("eco_task", eco_task))
+    app.add_handler(CommandHandler("news", news))
+    app.add_handler(CommandHandler("recycle", recycle))
+
+    print("Бот запущен...")
+    app.run_polling()
+
+if __name__ == "__main__":
+    main()
